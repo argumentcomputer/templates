@@ -2,6 +2,9 @@
 
 This repository contains template libraries for Lean and Rust with standard defaults for use in Argument projects.
 
+TODO:
+- Add top-level CI to test templates
+
 ## Usage
 
 To copy a template, run the following:
