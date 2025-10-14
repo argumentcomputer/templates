@@ -54,7 +54,7 @@
           })
           .executable;
 
-        # Provide a unified dev shell with Lean + Rust
+        # Provide a dev shell with Lean and Lake installed
         devShells.default = pkgs.mkShell {
           LEAN_SYSROOT = "${pkgs.lean.lean}";
           packages = with pkgs; [

@@ -1,0 +1,43 @@
+name: Nix CI
+
+# If using Garnix, edit to run after Garnix checks using `on: check_suite`
+# https://garnix.io/docs/gh-actions
+on:
+  push:
+    branches: [main, lean-nix-binary]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # Runs Rust tests via Nix
+  nix-test:
+    name: Nix Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix build --accept-flake-config --print-build-logs
+        working-directory: ${{ github.workspace }}/lean
+      - run: nix run --accept-flake-config --print-build-logs
+        working-directory: ${{ github.workspace }}/lean
+
+  # Tests Nix devShell support on Ubuntu
+  nix-devshell:
+    name: Nix devShell Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      # Builds and runs tests using Lake as a Nix package
+      - run: nix develop --accept-flake-config --command bash -c "lake build && lake exe template"
+        working-directory: ${{ github.workspace }}/lean
