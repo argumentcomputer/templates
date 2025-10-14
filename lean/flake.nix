@@ -56,10 +56,9 @@
 
         # Provide a unified dev shell with Lean + Rust
         devShells.default = pkgs.mkShell {
-          LEAN_SYSROOT = "${pkgs.lean.lean-all}";
+          LEAN_SYSROOT = "${pkgs.lean.lean}";
           packages = with pkgs; [
             lean.lean # Lean compiler
-            lean.lean-all # Includes Lake, stdlib, etc.
           ];
         };
       };
