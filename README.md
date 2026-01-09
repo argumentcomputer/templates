@@ -10,10 +10,15 @@ Nix:
 
 ```
 # Lean
-nix flake new --template github:argumentcomputer/templates#lean ./my-lean-project
+nix flake new --template github:argumentcomputer/templates#lean ./my-project
 
 # Rust
-nix flake new --template github:argumentcomputer/templates#rust ./my-rust-project
+nix flake new --template github:argumentcomputer/templates#rust ./my-project
+
+cd /my-project
+
+git init
+git add .
 ```
 
 Non-Nix:
@@ -22,8 +27,6 @@ Non-Nix:
 git clone https://github.com/argumentcomputer/templates && cd templates
 mkdir -p /path/to/my-project
 cp -r <lean|rust>/* /path/to/my-project && cd /path/to/my-project
-git init
-git add . && git commit -m "Initial commit"
 ```
 
 - Optional: Enable the Warpbuild and Garnix GitHub apps for CI and Nix caching
