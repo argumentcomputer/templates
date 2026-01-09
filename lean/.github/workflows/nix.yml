@@ -1,6 +1,7 @@
 name: Nix CI
 
 on:
+  # Change `push` to `merge_group` if merge queue enabled
   push:
     branches: main
   pull_request:
