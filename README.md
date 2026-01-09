@@ -19,6 +19,7 @@ cd /my-project
 
 git init
 git add .
+direnv allow
 ```
 
 Non-Nix:
