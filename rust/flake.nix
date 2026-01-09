@@ -28,8 +28,14 @@
     crane.url = "github:ipetkov/crane";
   };
 
-  outputs = inputs @ { nixpkgs, flake-parts, fenix, crane, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
+  outputs = inputs @ {
+    nixpkgs,
+    flake-parts,
+    fenix,
+    crane,
+    ...
+  }:
+    flake-parts.lib.mkFlake {inherit inputs;} {
       # Systems we want to build for
       systems = [
         "aarch64-darwin"
@@ -38,36 +44,41 @@
         "x86_64-linux"
       ];
 
-      perSystem = { system, pkgs, ... }:
-      let
+      perSystem = {
+        system,
+        pkgs,
+        ...
+      }: let
         # Pins the Rust toolchain
         rustToolchain = fenix.packages.${system}.fromToolchainFile {
           file = ./rust-toolchain.toml;
           # Update this hash when `rust-toolchain.toml` changes
           # Just copy the expected hash from the `nix build` error message
-          sha256 = "sha256-SJwZ8g0zF2WrKDVmHrVG3pD2RGoQeo24MEXnNx5FyuI=";
+          sha256 = "sha256-sqSWJDUxc+zaz1nBWMAJKTAGBuGWP25GCftIOlCEAtA=";
         };
         # Rust package
         craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
         commonArgs = {
           src = craneLib.cleanCargoSource ./.;
           strictDeps = true;
-      
-          buildInputs = [
-            # Add additional build inputs here
-          ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-            # Additional darwin specific inputs can be set here
-            pkgs.libiconv
-          ];
+
+          buildInputs =
+            [
+              # Add additional build inputs here
+            ]
+            ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+              # Additional darwin specific inputs can be set here
+              pkgs.libiconv
+            ];
         };
-        craneLibLLvmTools = craneLib.overrideToolchain rustToolchain;
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-        template = craneLib.buildPackage (commonArgs // {
-          inherit cargoArtifacts;
-          # Prevents tests from running on build
-          doCheck = false;
-        });
+        template = craneLib.buildPackage (commonArgs
+          // {
+            inherit cargoArtifacts;
+            # Prevents tests from running on build
+            doCheck = false;
+          });
 
         # Run tests with cargo-nextest
         template-nextest = craneLib.cargoNextest (
@@ -79,7 +90,6 @@
             cargoNextestPartitionsExtraArgs = "--no-tests=pass";
           }
         );
-      
         # Workspace example for `client` and `server` subcrates
         # serverPkg = craneLib.buildPackage (commonArgs // {
         #   inherit cargoArtifacts;
@@ -91,28 +101,24 @@
         #   pname = "client";
         #   cargoExtraArgs = "-p client";
         # });
-      in
-      {
+      in {
         # Run with `nix flake check -L`
         # To re-run from scratch, delete the derivations:
         # ```
         # rm result
-        # nix path-info .#default 
+        # nix path-info .#default
         # nix store delete /nix/store/<hash>-<name> # Use path from prior step
         # nix path-info .#test
         # nix store delete /nix/store/<hash>-<name> # Use path from prior step
         # ```
         # Then run `nix flake check -L` again
+        # Alternatively, run `nix build --rebuild` and ignore the non-determinism error
         checks = {
           inherit template template-nextest;
         };
 
         packages = {
           default = template;
-          # Runs tests on `nix build`, no runnable binary produced
-          # To show test logs either use `nix log .#test` or `nix build -L --rebuild`
-          # TODO: The latter causes a determinism error after running the tests, it can be ignored
-          test = template-nextest;
 
           # Workspace example
           # server = serverPkg;

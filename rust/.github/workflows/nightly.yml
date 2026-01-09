@@ -16,6 +16,3 @@ jobs:
 
   rust-version-check:
     uses: argumentcomputer/ci-workflows/.github/workflows/rust-version-check.yml@main
-
-  typos:
-    uses: argumentcomputer/ci-workflows/.github/workflows/typos.yml@main

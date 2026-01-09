@@ -15,7 +15,7 @@
     nixpkgs.follows = "lean4-nix/nixpkgs";
 
     # Lean 4 & Lake
-    lean4-nix.url = "github:lenianiva/lean4-nix";
+    lean4-nix.url = "github:argumentcomputer/lean4-nix?ref=7653ecd6d80710f42fcc2c117144698b18acdfc1";
 
     # Helper: flake-parts for easier outputs
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -40,26 +40,51 @@
         system,
         pkgs,
         ...
-      }: {
+      }: let
+        lake2nix = pkgs.callPackage lean4-nix.lake {};
+        lakeArgs = {
+          src = ./.;
+        };
+        lakeDeps = lake2nix.buildDeps lakeArgs;
+        lakeBuildArgs =
+          lakeArgs
+          // {
+            inherit lakeDeps;
+          };
+        leanLib = lake2nix.mkPackage (lakeBuildArgs
+          // {
+            name = "Template";
+            buildLibrary = true;
+          });
+        leanBin = lake2nix.mkPackage (lakeBuildArgs
+          // {
+            lakeArtifacts = leanLib;
+            installArtifacts = false;
+            name = "template";
+          });
+      in {
         # Lean overlay
         _module.args.pkgs = import nixpkgs {
           inherit system;
           overlays = [(lean4-nix.readToolchainFile ./lean-toolchain)];
         };
 
-        packages.default =
-          ((lean4-nix.lake {inherit pkgs;}).mkPackage {
-            src = ./.;
-            roots = ["Main" "Template"];
-          })
-          .executable;
+        packages = {
+          default = leanLib;
+          lean-bin = leanBin;
+        };
 
         # Provide a unified dev shell with Lean + Rust
         devShells.default = pkgs.mkShell {
+<<<<<<< Updated upstream
           LEAN_SYSROOT = "${pkgs.lean.lean-all}";
           packages = with pkgs; [
             lean.lean # Lean compiler
             lean.lean-all # Includes Lake, stdlib, etc.
+=======
+          packages = with pkgs; [
+            lean.lean-all # Includes Lean compiler, lake, stdlib, etc.
+>>>>>>> Stashed changes
           ];
         };
       };

@@ -2,9 +2,6 @@
 
 This repository contains template libraries for Lean and Rust with standard defaults for use in Argument projects.
 
-TODO:
-- Add top-level CI to test templates
-
 ## Usage
 
 To copy a template, run the following:
@@ -23,8 +20,8 @@ Non-Nix:
 
 ```
 git clone https://github.com/argumentcomputer/templates && cd templates
-cp -r <lean|rust> ../my-project && cd ../my-project
-rm -rf .git
+mkdir -p /path/to/my-project
+cp -r <lean|rust>/* /path/to/my-project && cd /path/to/my-project
 git init
 git add . && git commit -m "Initial commit"
 ```
