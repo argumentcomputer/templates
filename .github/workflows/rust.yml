@@ -1,0 +1,75 @@
+name: Rust CI
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'rust/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - 'rust/**'
+      - '.github/workflows/rust.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: rust
+
+jobs:
+  linux-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Get Rust toolchain channel
+        id: rust-tc
+        run: echo "channel=$(awk -F '\"' '/^channel/ {print $2}' rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ steps.rust-tc.outputs.channel }}
+          cache-workspaces: rust
+      - uses: taiki-e/install-action@nextest
+      - name: Linux Tests
+        run: cargo nextest run --profile ci --workspace
+
+  lints:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Get Rust toolchain channel
+        id: rust-tc
+        run: echo "channel=$(awk -F '\"' '/^channel/ {print $2}' rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ steps.rust-tc.outputs.channel }}
+          components: rustfmt, clippy
+          cache-workspaces: rust
+      - name: Check Rustfmt code style
+        run: cargo fmt --all -- --check
+      - name: Check *everything* compiles
+        run: cargo check --all-targets --all-features --workspace
+      - name: Check clippy lints
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Doctests
+        run: cargo test --doc --workspace
+      - name: Cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          manifest-path: rust/Cargo.toml
+          rust-version: ${{ steps.rust-tc.outputs.channel }}
+
+  nix-test:
+    name: Nix Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix build --print-build-logs --accept-flake-config
+      - run: nix flake check --print-build-logs --accept-flake-config

@@ -1,10 +1,15 @@
-name: Nix CI
+name: Lean CI
 
 on:
-  # Change `push` to `merge_group` if merge queue enabled
   push:
     branches: main
+    paths:
+      - 'lean/**'
+      - '.github/workflows/lean.yml'
   pull_request:
+    paths:
+      - 'lean/**'
+      - '.github/workflows/lean.yml'
   workflow_dispatch:
 
 concurrency:
@@ -12,16 +17,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Runs Rust tests via Nix
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: lean
+          build-args: "--wfail -v"
+
   nix-test:
     name: Nix Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lean
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
         with:
           nix_path: nixpkgs=channel:nixos-unstable
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      # Base package
       - run: nix build --print-build-logs --accept-flake-config
       - run: nix run .#lean-bin --print-build-logs --accept-flake-config
